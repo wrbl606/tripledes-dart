@@ -86,19 +86,22 @@ concat(List<int> a, List<int> b) {
       var thatByte = (thatWords[i >> 2] >> (24 - (i % 4) * 8)) & 0xff;
       var idx = (thisSigBytes + i) >> 2;
       expandList(thisWords, idx + 1);
-      thisWords[idx] |= thatByte << (24 - ((thisSigBytes + i) % 4) * 8);
+      thisWords[idx] =
+          thisWords[idx] | (thatByte << (24 - ((thisSigBytes + i) % 4) * 8));
     }
   } else {
     // Copy one word at a time
     for (var i = 0; i < thatSigBytes; i += 4) {
       var idx = (thisSigBytes + i) >> 2;
-      if (idx >= thisWords.length) {
-        thisWords.length = idx + 1;
+      for (var i = thisWords.length; i < idx + 1; i++) {
+        thisWords.add(0);
       }
       thisWords[idx] = thatWords[i >> 2];
     }
   }
-  a.length = thisSigBytes + thatSigBytes;
+  for (var i = a.length; i < thisSigBytes + thatSigBytes; i++) {
+    a.add(0);
+  }
 }
 
 void expandList(List<int> data, int newLength) {
@@ -107,7 +110,9 @@ void expandList(List<int> data, int newLength) {
   }
 
   // update the length
-  data.length = newLength;
+  for (var i = data.length; i < newLength; i++) {
+    data.add(0);
+  }
 
   // replace any new allocations with 0
   for (var i = 0; i < data.length; i++) {
@@ -123,8 +128,8 @@ void clamp(List<int> data) {
   var sigBytes = data.length;
 
   // Clamp
-  words[rightShift32(sigBytes, 2)] &=
-      (0xffffffff << (32 - (sigBytes % 4) * 8)).toSigned(32);
+  final p = rightShift32(sigBytes, 2);
+  words[p] = words[p] & (0xffffffff << (32 - (sigBytes % 4) * 8)).toSigned(32);
   words.length = (sigBytes / 4).ceil();
 }
 
@@ -143,10 +148,10 @@ String wordsToUtf8(List<int> words) {
   var sigBytes = words.length;
   var chars = <int>[];
   for (var i = 0; i < sigBytes; i++) {
-    if (words[i >> 2] == null) {
-      words[i >> 2] = 0;
-    }
-    var bite = ((words[i >> 2]).toSigned(32) >> (24 - (i % 4) * 8)) & 0xff;
+    // if (words[i >> 2] == null) {
+    //   words[i >> 2] = 0;
+    // }
+    var bite = (words[i >> 2].toSigned(32) >> (24 - (i % 4) * 8)) & 0xff;
     chars.add(bite);
   }
 
@@ -156,12 +161,12 @@ String wordsToUtf8(List<int> words) {
 List<int> parseBase64(String base64Str) {
   const map =
       'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-  List reverseMap;
+  List? reverseMap;
   // Shortcuts
   var base64StrLength = base64Str.length;
 
   if (reverseMap == null) {
-    reverseMap = new List<int>(123);
+    reverseMap = new List<int>.filled(123, 0);
     for (var j = 0; j < map.length; j++) {
       reverseMap[map.codeUnits[j]] = j;
     }
@@ -203,5 +208,5 @@ List<int> parseBase64(String base64Str) {
   }
 
   // Convert
-  return parseLoop(base64Str, base64StrLength, reverseMap);
+  return parseLoop(base64Str, base64StrLength, reverseMap as List<int>);
 }

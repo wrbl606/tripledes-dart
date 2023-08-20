@@ -9,8 +9,8 @@ abstract class Engine {
 
 /// BufferedBlockAlgorithm.process()
 abstract class BaseEngine implements Engine {
-  bool forEncryption;
-  List<int> key;
+  late bool forEncryption;
+  late List<int> key;
 
   void init(bool forEncryption, List<int> key) {
     this.key = key;
@@ -18,7 +18,7 @@ abstract class BaseEngine implements Engine {
   }
 
   void reset() {
-    key = null;
+    key = [];
     forEncryption = false;
   }
 
@@ -54,7 +54,7 @@ abstract class BaseEngine implements Engine {
     var nBytesReady = min(nWordsReady * 4, dataSigBytes);
 
     // Process blocks
-    List<int> processedWords;
+    late List<int> processedWords;
     if (nWordsReady != 0) {
       for (var offset = 0; offset < nWordsReady; offset += blockSize) {
         // Perform concrete-algorithm logic
